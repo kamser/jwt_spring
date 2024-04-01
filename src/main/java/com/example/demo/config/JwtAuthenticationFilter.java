@@ -17,6 +17,8 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private final String  JWT_SECRET_WORD = "Bearer ";
+    private final JwtService jwtService;
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
@@ -24,12 +26,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain) throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization"); //Extract the jwt from the request header.
         final String jwt;
+        final String userEmail;
         //Going to do the first filter related with no token or a wrong content for the token
-        if(authHeader == null || !authHeader.startsWith("Bearer ")){
+        if(authHeader == null || !authHeader.startsWith(JWT_SECRET_WORD){
             filterChain.doFilter(request, response);
             return; // to stop the verification
         }
 
         //In case the token pass the first filter, then proceed to extract the user information to check if the user exist
+        jwt = authHeader.substring(JWT_SECRET_WORD.length()); //The jwt start after the secret phrase of the header
+        userEmail = jwtService.extractUsername(jwt); //Extract the email from the jwt using a created service to manipulate the jwt string to extract the content.
     }
 }
