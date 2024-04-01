@@ -22,6 +22,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
+        final String authHeader = request.getHeader("Authorization"); //Extract the jwt from the request header.
+        final String jwt;
+        //Going to do the first filter related with no token or a wrong content for the token
+        if(authHeader == null || !authHeader.startsWith("Bearer ")){
+            filterChain.doFilter(request, response);
+            return; // to stop the verification
+        }
 
+        //In case the token pass the first filter, then proceed to extract the user information to check if the user exist
     }
 }
