@@ -6,9 +6,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -43,7 +45,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         //Now that I have the service to manipulate the token and extract the userEmail (or Username) I need to use that information to check if the user exist in the database.
         if(userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null){
-            UserDetails userDetails = this.userDetailsService.loadUserByUserName(userEmail);
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail); //To do this, first I need to create the ApplicationConfiguration to get the userRepository.
+            if(jwtService.isTokenValid(jwt, userDetails)){
+                //The next object is use by spring boot to update the Security Context
+                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null, // This is because I don't have the user credentials here, cuz I'm creating the user.
+                        userDetails.getAuthorities()
+                );
+                authenticationToken.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+                //Now I have to update the security context
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            }
         }
+        filterChain.doFilter(request, response);
     }
 }
