@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -25,7 +26,7 @@ public class JwtService {
     //This key was got it from a page that generate random encryption key. The level security is 256-bit in HEX
     private static final String SECRET_KEY = "E4AEF8E388D69BAF42615AF7222A4CAB9E4DDF4668252547A4334A2F3C";
 
-    public String extractUserName(String jwt){
+    public String extractUsername(String jwt){
         return extractClaim(jwt, Claims::getSubject);
     }
 
@@ -64,5 +65,24 @@ public class JwtService {
                 .setExpiration(new Date(System.currentTimeMillis() + (100*60*24))) //Here I set the expiration time which is 24 hours
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256) //Here I user the Key I created useing the internal secret_key and I set the encrypted algorithm to use
                 .compact();
+    }
+
+    //Next method is for the case I need to create a token without extra claims, only with the UserDetails data
+    public String generateToken(UserDetails userDetails){
+        return generateToken(new HashMap<>(), userDetails); //Just send the hashmap claims empty.
+    }
+
+    //The next method is to validate the token
+    public boolean isTokenValid(String token, UserDetails userDetails){
+        final String username =  extractUsername(token);
+        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+    }
+
+    public boolean isTokenExpired(String token){
+        return extractExpiration(token).before(new Date());
+    }
+
+    private Date extractExpiration(String token){
+        return extractClaim(token, Claims::getExpiration);
     }
 }
